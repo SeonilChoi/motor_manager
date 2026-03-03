@@ -95,6 +95,9 @@ void motor_manager::MotorManager::initialize()
     for (auto& m_iter : masters_) m_iter.second->initialize();
 
     for (uint8_t i = 0; i < number_of_controllers_; ++i) {
+        if (!controllers_[i]) {
+            throw std::runtime_error("Controller index must be 0-based and sequential in config.");
+        }
         uint8_t m_id = controllers_[i]->master_id();
         uint8_t d_id = controllers_[i]->driver_id();
         controllers_[i]->initialize(*masters_.at(m_id), *drivers_.at(d_id));
@@ -107,6 +110,9 @@ void motor_manager::MotorManager::enable()
     uint8_t sum{0};
 
     for (uint8_t i = 0; i < number_of_controllers_; ++i) {
+        if (!controllers_[i]) {
+            throw std::runtime_error("Controller index must be 0-based and sequential in config.");
+        }
         if (!result[i]) result[i] = controllers_[i]->enable();
         sum += result[i];
     }
@@ -119,6 +125,9 @@ void motor_manager::MotorManager::disable()
     uint8_t sum{0};
     
     for (uint8_t i = 0; i < number_of_controllers_; ++i) {
+        if (!controllers_[i]) {
+            throw std::runtime_error("Controller index must be 0-based and sequential in config.");
+        }
         if (!result[i]) result[i] = controllers_[i]->disable();
         sum += result[i];
     }
@@ -128,6 +137,9 @@ void motor_manager::MotorManager::disable()
 void motor_manager::MotorManager::check(const motor_interface::motor_frame_t* status)
 {
     for (uint8_t i = 0; i < number_of_controllers_; ++i) {
+        if (!controllers_[i]) {
+            throw std::runtime_error("Controller index must be 0-based and sequential in config.");
+        }
         controllers_[i]->check(status[i]);
     }
 }
@@ -135,13 +147,20 @@ void motor_manager::MotorManager::check(const motor_interface::motor_frame_t* st
 void motor_manager::MotorManager::write(const motor_interface::motor_frame_t* command, const uint8_t size)
 {
     for (uint8_t i = 0; i < size; ++i) {
-        controllers_[command[i].controller_index]->write(command[i]);
+        uint8_t idx = command[i].controller_index;
+        if (idx >= MAX_CONTROLLER_SIZE || !controllers_[idx]) {
+            throw std::runtime_error("Invalid controller index in write.");
+        }
+        controllers_[idx]->write(command[i]);
     }
 }
 
 void motor_manager::MotorManager::read(motor_interface::motor_frame_t* status)
 {
     for (uint8_t i = 0; i < number_of_controllers_; ++i) {
+        if (!controllers_[i]) {
+            throw std::runtime_error("Controller index must be 0-based and sequential in config.");
+        }
         controllers_[i]->read(status[i]);
     }
 }

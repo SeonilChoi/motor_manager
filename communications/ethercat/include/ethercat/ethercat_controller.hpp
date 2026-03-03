@@ -50,7 +50,7 @@ private:
 
     void addSlaveConfigPdos();
 
-    std::unique_ptr<EthercatMaster> master_;
+    EthercatMaster* master_{nullptr};
 
     ec_slave_config_t* slave_config_{nullptr};
 

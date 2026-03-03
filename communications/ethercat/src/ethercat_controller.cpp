@@ -1,13 +1,14 @@
+#include <stdexcept>
 #include <vector>
 
 #include "ethercat/ethercat_controller.hpp"
 
 void ethercat::EthercatController::initialize(motor_interface::MotorMaster& master, motor_interface::MotorDriver& driver)
 {
-    auto* m = dynamic_cast<ethercat::EthercatMaster*>(&master);
+    EthercatMaster* m = dynamic_cast<EthercatMaster*>(&master);
     if (!m) throw std::runtime_error("Failed to cast master to EthercatMaster.");
 
-    master_ = std::make_unique<ethercat::EthercatMaster>(*m);
+    master_ = m;
     driver_ = &driver;
 
     slave_config_ = ecrt_master_slave_config(master_->master(), alias_, position_, vendor_id_, product_id_);

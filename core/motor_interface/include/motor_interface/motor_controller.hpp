@@ -1,8 +1,6 @@
 #ifndef MOTOR_INTERFACE_MOTOR_CONTROLLER_HPP_
 #define MOTOR_INTERFACE_MOTOR_CONTROLLER_HPP_
 
-#include <memory>
-
 #include "motor_interface/motor_master.hpp"
 #include "motor_interface/motor_driver.hpp"
 
