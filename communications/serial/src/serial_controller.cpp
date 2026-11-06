@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <chrono>
 #include <cstring>
 #include <iomanip>
 #include <sstream>
@@ -227,6 +228,8 @@ void serial::SerialController::read(motor_interface::motor_frame_t& status)
 {
     readData(tx_interfaces_, driver_->number_of_tx_interfaces());
 
+    motor_interface::entry_table_t* temperature_entry = nullptr;
+
     for (uint8_t i = 0; i < driver_->number_of_tx_interfaces(); ++i) {
         const motor_interface::entry_table_t& e = tx_interfaces_[i];
 
@@ -242,10 +245,26 @@ void serial::SerialController::read(motor_interface::motor_frame_t& status)
             status.velocity = driver_->velocity(static_cast<int32_t>(readSignedValue(e)));
         } else if (e.id == motor_interface::ID_CURRENT_EFFORT) {
             status.effort = driver_->effort(static_cast<int16_t>(readSignedValue(e)));
+        } else if (e.id == motor_interface::ID_CURRENT_TEMPERATURE) {
+            temperature_entry = &tx_interfaces_[i];
         } else {
             throw std::runtime_error("Invalid serial TX interface ID.");
         }
     }
+
+    // Temperature is not bulk read: it is polled (1 Hz) only while torque is
+    // OFF, so it never slows the control loop during motion.
+    if (temperature_entry && status.statusword == 0) {
+        const auto now = std::chrono::steady_clock::now();
+        if (now - last_temperature_read_ >= std::chrono::seconds(1)) {
+            last_temperature_read_ = now;
+            if (master_->readRegister(
+                    bus_id_, temperature_entry->index, temperature_entry->data, temperature_entry->size)) {
+                temperature_ = static_cast<double>(readUnsignedValue(*temperature_entry));
+            }
+        }
+    }
+    status.temperature = temperature_;
 
     status.controller_index = index_;
 }
@@ -354,6 +373,9 @@ void serial::SerialController::addBulkEntries()
             e.size,
             {0}
         };
+
+        // Read on demand in read(), see there.
+        if (e.id == motor_interface::ID_CURRENT_TEMPERATURE) continue;
 
         master_->registerBulkRead(bus_id_, e.index, e.size);
     }
