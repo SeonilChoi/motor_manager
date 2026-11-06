@@ -1,6 +1,8 @@
 #ifndef SERIAL_SERIAL_CONTROLLER_HPP_
 #define SERIAL_SERIAL_CONTROLLER_HPP_
 
+#include <chrono>
+
 #include "motor_interface/motor_controller.hpp"
 #include "serial/serial_driver.hpp"
 #include "serial/serial_master.hpp"
@@ -60,6 +62,10 @@ private:
     motor_interface::entry_table_t rx_interfaces_[motor_interface::MAX_INTERFACE_SIZE]{};
 
     motor_interface::entry_table_t tx_interfaces_[motor_interface::MAX_INTERFACE_SIZE]{};
+
+    std::chrono::steady_clock::time_point last_temperature_read_{};
+
+    double temperature_{0.0};
 
     uint8_t number_of_active_rx_interfaces_{0};
 

@@ -401,7 +401,6 @@ void motor_manager::MotorManager::disableController(const uint8_t controller_ind
 void motor_manager::MotorManager::updateController(const uint8_t controller_index)
 {
     if (controller_index >= motor_interface::MAX_CONTROLLER_SIZE || !controllers_[controller_index]) return;
-    if (!controller_enabled_[controller_index].load(std::memory_order_acquire)) return;
 
     motor_interface::motor_frame_t controller_status{};
     controllers_[controller_index]->read(controller_status);
@@ -414,7 +413,8 @@ void motor_manager::MotorManager::updateController(const uint8_t controller_inde
         std::lock_guard<std::mutex> lock(frame_mutex_);
         status_[controller_index] = controller_status;
 
-        if (controller_status.errorcode == 0 &&
+        if (controller_enabled_[controller_index].load(std::memory_order_acquire) &&
+            controller_status.errorcode == 0 &&
             command_sequence_[controller_index] != applied_command_sequence_[controller_index])
         {
             pending_command = command_[controller_index];
@@ -442,10 +442,10 @@ void motor_manager::MotorManager::applyControllerRequests(const std::vector<uint
 
         if (controller_enable_requested_[i].load(std::memory_order_acquire)) {
             enableController(i);
-            updateController(i);
         } else {
             disableController(i);
         }
+        updateController(i);
     }
 
     refreshEnabled();

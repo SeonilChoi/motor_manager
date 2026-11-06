@@ -30,3 +30,4 @@ interfaces:
   - { id: 6, name: "Present Position",      type: s32 }
   - { id: 7, name: "Present Velocity",      type: s32 }
   - { id: 8, name: "Present Current",       type: s16 }
+  - { id: 11, name: "Present Temperature",  type: u8  }
